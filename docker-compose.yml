@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: nagarsetu_mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  server:
+    build: ./server
+    container_name: nagarsetu_server
+    ports:
+      - "5000:5000"
+    environment:
+      # Connect server container directly to the mongo container
+      - MONGODB_URI=mongodb://mongodb:27017/nagarsetu
+      - PORT=5000
+    depends_on:
+      - mongodb
+
+  client:
+    build: ./client
+    container_name: nagarsetu_client
+    ports:
+      - "5173:5173"
+    depends_on:
+      - server
+
+  admin-panel:
+    build: ./admin-panel
+    container_name: nagarsetu_admin
+    ports:
+      - "5174:5174"
+    depends_on:
+      - server
+
+volumes:
+  mongodb_data:
