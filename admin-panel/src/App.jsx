@@ -68,11 +68,11 @@ function PrivateRoute({ children }) {
 function App() {
   return (
     <BrowserRouter>
-      <div className="admin-layout">
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="*" element={
-            <PrivateRoute>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="*" element={
+          <PrivateRoute>
+            <div className="admin-layout">
               <Sidebar />
               <div className="main-wrapper">
                 <header className="topbar">
@@ -101,10 +101,10 @@ function App() {
                   <div>© 2026 Municipal Administration Systems. NagarSetu V2.4.0</div>
                 </footer>
               </div>
-            </PrivateRoute>
-          } />
-        </Routes>
-      </div>
+            </div>
+          </PrivateRoute>
+        } />
+      </Routes>
     </BrowserRouter>
   );
 }
