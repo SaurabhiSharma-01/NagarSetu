@@ -1,8 +1,12 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
-import { Grid, BarChart2, Users, Settings, Plus, Search, Bell, HelpCircle } from 'lucide-react';
+import { Grid, BarChart2, Users as UsersIcon, Settings as SettingsIcon, Plus, Search, Bell, HelpCircle } from 'lucide-react';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Reports from './pages/Reports';
+import NewReport from './pages/NewReport';
+import Users from './pages/Users';
+import Settings from './pages/Settings';
 
 function Sidebar() {
   const navigate = useNavigate();
@@ -31,21 +35,21 @@ function Sidebar() {
         <Link to="/dashboard" className={`menu-item ${location.pathname === '/dashboard' ? 'active' : ''}`}>
           <Grid size={20} /> Overview
         </Link>
-        <div className="menu-item">
+        <Link to="/reports" className={`menu-item ${location.pathname === '/reports' ? 'active' : ''}`}>
           <BarChart2 size={20} /> Reports
-        </div>
-        <div className="menu-item">
-          <Users size={20} /> Users
-        </div>
-        <div className="menu-item">
-          <Settings size={20} /> Settings
-        </div>
+        </Link>
+        <Link to="/users" className={`menu-item ${location.pathname === '/users' ? 'active' : ''}`}>
+          <UsersIcon size={20} /> Users
+        </Link>
+        <Link to="/settings" className={`menu-item ${location.pathname === '/settings' ? 'active' : ''}`}>
+          <SettingsIcon size={20} /> Settings
+        </Link>
       </nav>
 
       <div className="sidebar-bottom">
-        <button className="btn btn-primary" style={{ width: '100%', marginBottom: '16px' }}>
+        <Link to="/new-report" className="btn btn-primary" style={{ width: '100%', marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
           <Plus size={18} /> New Report
-        </button>
+        </Link>
         <div className="user-profile" onClick={handleLogout} style={{ cursor: 'pointer' }}>
           <div className="avatar">
            <img src="https://ui-avatars.com/api/?name=Admin+User&background=334155&color=fff" alt="Admin" style={{width: '100%', height: '100%', borderRadius: '8px'}} />
@@ -89,6 +93,10 @@ function App() {
                 <div className="content-area">
                   <Routes>
                     <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/reports" element={<Reports />} />
+                    <Route path="/users" element={<Users />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/new-report" element={<NewReport />} />
                     <Route path="*" element={<Navigate to="/dashboard" />} />
                   </Routes>
                 </div>
