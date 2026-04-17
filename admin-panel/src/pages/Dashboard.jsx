@@ -6,6 +6,8 @@ const Dashboard = () => {
   const [complaints, setComplaints] = useState([]);
   const [filterStatus, setFilterStatus] = useState('All');
   const [filterCategory, setFilterCategory] = useState('All');
+  const [filterDate, setFilterDate] = useState('AllTime');
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   
   const [updateStatus, setUpdateStatus] = useState('');
@@ -45,8 +47,50 @@ const Dashboard = () => {
   const filteredComplaints = complaints.filter(c => {
     if (filterStatus !== 'All' && c.status !== filterStatus) return false;
     if (filterCategory !== 'All' && c.category !== filterCategory) return false;
+    
+    if (filterDate !== 'AllTime') {
+      const complaintDate = new Date(c.createdAt);
+      const now = new Date();
+      const diffDays = Math.ceil(Math.abs(now - complaintDate) / (1000 * 60 * 60 * 24)); 
+      if (filterDate === 'Last7Days' && diffDays > 7) return false;
+      if (filterDate === 'Last30Days' && diffDays > 30) return false;
+    }
+
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const citizenName = c.userId?.name?.toLowerCase() || '';
+      const title = c.title?.toLowerCase() || '';
+      const idStr = c._id.toLowerCase();
+      if (!citizenName.includes(query) && !title.includes(query) && !idStr.includes(query)) {
+        return false;
+      }
+    }
     return true;
   });
+
+  const exportToCSV = () => {
+    if (filteredComplaints.length === 0) return alert('No data to export.');
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "ID,Title,Citizen,Category,Location,Status,Date\n";
+    
+    filteredComplaints.forEach(c => {
+      const citizen = c.userId?.name || 'Unknown Citizen';
+      // Basic escaping handling
+      const cleanTitle = (c.title || '').replace(/"/g, '""');
+      const cleanLocation = (c.location || '').replace(/"/g, '""');
+      
+      const row = `${c._id},"${cleanTitle}","${citizen}","${c.category}","${cleanLocation}","${c.status}","${new Date(c.createdAt).toLocaleDateString()}"`;
+      csvContent += row + "\n";
+    });
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "NagarSetu_Complaints_Export.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const pendingCount = complaints.filter(c => c.status === 'Pending').length;
   const inProgressCount = complaints.filter(c => c.status === 'In Progress').length;
@@ -104,19 +148,30 @@ const Dashboard = () => {
         </div>
         <div className="filter-group">
           <label className="filter-label">DATE RANGE</label>
-          <input type="text" className="filter-input" placeholder="Last 30 Days" disabled />
+          <select className="filter-input" value={filterDate} onChange={(e) => setFilterDate(e.target.value)}>
+            <option value="AllTime">All Time</option>
+            <option value="Last7Days">Last 7 Days</option>
+            <option value="Last30Days">Last 30 Days</option>
+          </select>
         </div>
-        <div className="filter-group" style={{ flex: '0 0 auto', justifyContent: 'flex-end' }}>
-          <button className="btn btn-secondary" style={{ padding: '10px 24px', height: '40px' }} onClick={() => { setFilterCategory('All'); setFilterStatus('All'); }}>Reset Filters</button>
+        <div className="filter-group" style={{ flex: '0 0 auto', justifyContent: 'flex-end', alignItems: 'flex-end' }}>
+          <button className="btn btn-secondary" style={{ padding: '0 24px', height: '44px' }} onClick={() => { setFilterCategory('All'); setFilterStatus('All'); setFilterDate('AllTime'); setSearchQuery(''); }}>Reset Filters</button>
         </div>
       </div>
 
       <div className="table-container">
         <div className="table-header">
           <h3>Recent Complaints</h3>
-          <div style={{ display: 'flex', gap: '16px', color: 'var(--text-muted)' }}>
-            <Filter size={20} cursor="pointer" />
-            <Download size={20} cursor="pointer" />
+          <div style={{ display: 'flex', gap: '16px', color: 'var(--text-muted)', alignItems: 'center' }}>
+            <input 
+              type="text" 
+              placeholder="Search ID, Title, Citizen..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ padding: '6px 12px', border: '1px solid var(--border)', borderRadius: '4px', fontSize: '0.85rem', width: '200px' }}
+            />
+            <Filter size={20} cursor="pointer" title="Adjust filters above" />
+            <Download size={20} cursor="pointer" title="Export current view to CSV" onClick={exportToCSV} />
           </div>
         </div>
         <table>

@@ -171,6 +171,11 @@
 }
 
 /* Chart Dummy Styling */
+@keyframes barGrow {
+  0% { transform: scaleY(0); opacity: 0; }
+  100% { transform: scaleY(1); opacity: 1; }
+}
+
 .dummy-chart {
   height: 220px;
   width: 100%;
@@ -186,6 +191,24 @@
   background: #bfdbfe;
   border-radius: 4px 4px 0 0;
   position: relative;
+  transform-origin: bottom;
+  animation: barGrow 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  transition: all 0.3s ease;
+}
+.dummy-bar:nth-child(1) { animation-delay: 0.05s; opacity: 0; }
+.dummy-bar:nth-child(2) { animation-delay: 0.1s; opacity: 0; }
+.dummy-bar:nth-child(3) { animation-delay: 0.15s; opacity: 0; }
+.dummy-bar:nth-child(4) { animation-delay: 0.2s; opacity: 0; }
+.dummy-bar:nth-child(5) { animation-delay: 0.25s; opacity: 0; }
+.dummy-bar:nth-child(6) { animation-delay: 0.3s; opacity: 0; }
+.dummy-bar:nth-child(7) { animation-delay: 0.35s; opacity: 0; }
+.dummy-bar:nth-child(8) { animation-delay: 0.4s; opacity: 0; }
+.dummy-bar:nth-child(9) { animation-delay: 0.45s; opacity: 0; }
+
+.dummy-bar:hover {
+  background: #1d4ed8 !important;
+  transform: scaleY(1.05) !important;
+  box-shadow: 0 -4px 12px rgba(29, 78, 216, 0.3);
 }
 .dummy-bar:nth-child(even) {
   background: #93c5fd;
@@ -193,11 +216,21 @@
 .dummy-bar:nth-child(4n) {
   background: #3b82f6;
 }
+@keyframes drawTrendLine {
+  from { stroke-dashoffset: 300; }
+  to { stroke-dashoffset: 0; }
+}
+
 .dummy-line {
   position: absolute;
   top: 40px; left: 0; right: 0;
   height: 100px;
   pointer-events: none;
+}
+.dummy-line path {
+  stroke-dasharray: 300;
+  stroke-dashoffset: 300;
+  animation: drawTrendLine 2s ease-out 0.5s forwards;
 }
 .chart-labels {
   position: absolute;
@@ -224,6 +257,11 @@
 }
 
 /* Status Distribution */
+@keyframes spinFadeIn {
+  0% { transform: rotate(-90deg) scale(0.8); opacity: 0; }
+  100% { transform: rotate(0deg) scale(1); opacity: 1; }
+}
+
 .donut-container {
   display: flex;
   flex-direction: column;
@@ -244,7 +282,16 @@
   justify-content: center;
   margin-bottom: 24px;
   position: relative;
+  animation: spinFadeIn 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
 }
+
+.donut-hole:hover {
+  transform: scale(1.05) rotate(5deg);
+  box-shadow: 0 12px 30px rgba(29, 78, 216, 0.2);
+}
+
 .donut-inner {
   width: 100px;
   height: 100px;
@@ -254,6 +301,11 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  transition: transform 0.3s ease;
+}
+
+.donut-hole:hover .donut-inner {
+  transform: scale(0.92);
 }
 .donut-val {
   font-size: 1.5rem;
@@ -485,4 +537,40 @@
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
   cursor: pointer;
   color: var(--text-main);
+}
+
+/* Sidebar Map Tools */
+.map-sidebar-tools {
+  position: absolute;
+  top: 24px; left: 24px;
+  background: #f8fafc;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 10px;
+  gap: 16px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  z-index: 20;
+}
+
+.tool-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #475569;
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.tool-btn:hover {
+  background: #e2e8f0;
+}
+
+.tool-btn.active {
+  background: #1d4ed8;
+  color: white;
 }

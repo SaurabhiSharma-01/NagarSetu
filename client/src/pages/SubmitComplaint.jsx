@@ -2,6 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { MapPin, Camera, Info, Map, CheckCircle } from 'lucide-react';
+import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
+
+const mapContainerStyle = {
+  width: '100%',
+  height: '220px',
+  borderRadius: '8px'
+};
+const defaultCenter = { lat: 28.6139, lng: 77.2090 }; // Default: New Delhi
 
 const SubmitComplaint = () => {
   const navigate = useNavigate();
@@ -16,6 +24,18 @@ const SubmitComplaint = () => {
   const user = JSON.parse(localStorage.getItem('user'));
 
   const [isUploading, setIsUploading] = useState(false);
+  const [markerPos, setMarkerPos] = useState(defaultCenter);
+
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "YOUR_API_KEY_HERE"
+  });
+
+  const onMapClick = (e) => {
+    const coords = { lat: e.latLng.lat(), lng: e.latLng.lng() };
+    setMarkerPos(coords);
+    setFormData(prev => ({ ...prev, location: `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}` }));
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -99,8 +119,25 @@ const SubmitComplaint = () => {
 
         <div className="form-group">
           <label className="form-label">EXACT LOCATION</label>
+          <div style={{ marginBottom: '16px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+            {isLoaded ? (
+              <GoogleMap
+                mapContainerStyle={mapContainerStyle}
+                center={defaultCenter}
+                zoom={12}
+                onClick={onMapClick}
+                options={{ disableDefaultUI: true, zoomControl: true }}
+              >
+                {markerPos && <Marker position={markerPos} />}
+              </GoogleMap>
+            ) : (
+              <div style={{ width: '100%', height: '220px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                 Loading Map System...
+              </div>
+            )}
+          </div>
           <div style={{ position: 'relative' }}>
-            <input type="text" name="location" required className="form-input" value={formData.location} onChange={handleInputChange} placeholder="Detecting location..." style={{ paddingRight: '48px' }} />
+            <input type="text" name="location" required className="form-input" value={formData.location} onChange={handleInputChange} placeholder="Tap map to pin coordinates..." style={{ paddingRight: '48px' }} />
             <div style={{ position: 'absolute', right: '12px', top: '12px', background: 'white', padding: '4px', borderRadius: '4px' }}>
                 <Map size={16} color="var(--primary)" />
             </div>

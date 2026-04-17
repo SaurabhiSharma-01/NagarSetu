@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { auth, authAdmin } = require('../middleware/auth');
 
 // Register
 router.post('/register', async (req, res) => {
@@ -49,6 +50,34 @@ router.post('/login', async (req, res) => {
                 role: user.role
             }
         });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get all users (Admin only)
+router.get('/users', auth, authAdmin, async (req, res) => {
+    try {
+        const users = await User.find().select('-password').sort({ createdAt: -1 });
+        res.json(users);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Delete/Ban User (Admin only)
+router.delete('/users/:id', auth, authAdmin, async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ msg: 'User not found' });
+        
+        // Prevent deleting other admins to avoid locking out the system
+        if (user.role === 'admin') {
+             return res.status(403).json({ msg: 'Cannot delete an administrative account' });
+        }
+
+        await User.findByIdAndDelete(req.params.id);
+        res.json({ msg: 'User removed from platform' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

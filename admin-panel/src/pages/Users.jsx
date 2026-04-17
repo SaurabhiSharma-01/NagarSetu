@@ -9,21 +9,39 @@ const Users = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const token = localStorage.getItem('adminToken');
 
+  const fetchUsers = async () => {
+    try {
+      const res = await axios.get('http://localhost:5000/api/auth/users', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setUsers(res.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const res = await axios.get('http://localhost:5000/api/auth/users', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setUsers(res.data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchUsers();
   }, [token]);
+
+  const handleBanUser = async (id, role) => {
+    if (role === 'admin') return alert('Administrative accounts cannot be banned from this interface.');
+    
+    if (window.confirm("Are you sure you want to permanently ban this user? They will lose all portal access.")) {
+      try {
+        await axios.delete(`http://localhost:5000/api/auth/users/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        // Refresh the list after successful ban
+        fetchUsers();
+      } catch (err) {
+        console.error("Failed to ban user", err);
+        alert('Failed to ban user');
+      }
+    }
+  };
 
   const totalUsers = users.length;
   // Mock some metrics that aren't native in simple DB
@@ -137,8 +155,14 @@ const Users = () => {
                 </td>
                 <td>
                   <div style={{ display: 'flex', gap: '16px', color: 'var(--text-muted)' }}>
-                    <Edit2 size={16} cursor="pointer" />
-                    <Ban size={16} cursor="pointer" />
+                    <Edit2 size={16} cursor="pointer" title="Edit Profile" />
+                    <Ban 
+                      size={16} 
+                      cursor="pointer" 
+                      onClick={() => handleBanUser(user._id, user.role)} 
+                      color={user.role === 'admin' ? "var(--border)" : "var(--text-muted)"}
+                      title="Ban & Remove Scope"
+                    />
                   </div>
                 </td>
               </tr>

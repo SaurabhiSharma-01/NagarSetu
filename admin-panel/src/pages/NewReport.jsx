@@ -2,6 +2,14 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, UploadCloud, CheckCircle } from 'lucide-react';
+import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
+
+const mapContainerStyle = {
+  width: '100%',
+  height: '160px',
+  borderRadius: '8px'
+};
+const defaultCenter = { lat: 28.6139, lng: 77.2090 };
 
 const NewReport = () => {
   const navigate = useNavigate();
@@ -21,6 +29,18 @@ const NewReport = () => {
   const [imagePreview, setImagePreview] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [markerPos, setMarkerPos] = useState(defaultCenter);
+
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "YOUR_API_KEY_HERE"
+  });
+
+  const onMapClick = (e) => {
+    const coords = { lat: e.latLng.lat(), lng: e.latLng.lng() };
+    setMarkerPos(coords);
+    setFormData(prev => ({ ...prev, location: `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}` }));
+  };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -200,28 +220,27 @@ const NewReport = () => {
           {/* Location Block */}
           <div style={{ background: '#e2e8f0', padding: '32px', borderRadius: 'var(--radius-md)' }}>
             <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)', letterSpacing: '0.05em', margin: '0 0 24px 0', textTransform: 'uppercase' }}>03. Location</h3>
-            <div style={{ 
-              width: '100%', 
-              height: '160px', 
-              background: '#cbd5e1', 
-              borderRadius: 'var(--radius-sm)', 
-              marginBottom: '16px', 
-              position: 'relative', 
-              overflow: 'hidden',
-              backgroundImage: 'radial-gradient(circle at center, #94a3b8 2px, transparent 2px)',
-              backgroundSize: '20px 20px'
-            }}>
-               <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'var(--primary)' }}>
-                 <MapPin size={32} fill="currentColor" color="white" />
-               </div>
-               <div style={{ position: 'absolute', bottom: '12px', right: '12px', background: 'white', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '0.7rem', fontWeight: 700 }}>
-                 PIN LOCATION
-               </div>
+            <div style={{ marginBottom: '16px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+              {isLoaded ? (
+                <GoogleMap
+                  mapContainerStyle={mapContainerStyle}
+                  center={defaultCenter}
+                  zoom={12}
+                  onClick={onMapClick}
+                  options={{ disableDefaultUI: true, zoomControl: true }}
+                >
+                  {markerPos && <Marker position={markerPos} />}
+                </GoogleMap>
+              ) : (
+                <div style={{ width: '100%', height: '160px', background: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', fontWeight: 600 }}>
+                  Initializing Map...
+                </div>
+              )}
             </div>
             <input 
               type="text" 
               className="form-control" 
-              placeholder="Search address..." 
+              placeholder="Click on the map to pin exact coordinates..." 
               style={{ border: 'none' }}
               value={formData.location}
               onChange={(e) => setFormData({...formData, location: e.target.value})}

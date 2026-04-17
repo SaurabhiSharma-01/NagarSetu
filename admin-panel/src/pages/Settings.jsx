@@ -3,7 +3,28 @@ import { User, Bell, Sliders, Shield, Camera, Lock, Smartphone, ChevronRight, Hi
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState('account');
-  const adminUser = JSON.parse(localStorage.getItem('adminUser')) || { name: 'Vikram Malhotra', email: 'v.malhotra@nagarsetu.gov.in' };
+  const [adminUser, setAdminUser] = useState(() => JSON.parse(localStorage.getItem('adminUser')) || { name: 'Super Admin', email: 'admin@nagarsetu.com', designation: 'City Commissioner' });
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [notifs, setNotifs] = useState(() => JSON.parse(localStorage.getItem('adminNotifs')) || { email: true, sms: false, desktop: true });
+
+  const handleSaveProfile = () => {
+    localStorage.setItem('adminUser', JSON.stringify(adminUser));
+    setEditingProfile(false);
+    alert('Profile successfully updated!');
+    window.dispatchEvent(new Event('storage')); // to trigger app updates if needed
+  };
+
+  const toggleNotif = (key) => {
+    const next = { ...notifs, [key]: !notifs[key] };
+    setNotifs(next);
+    localStorage.setItem('adminNotifs', JSON.stringify(next));
+  };
+
+  const Toggle = ({ active, onClick }) => (
+    <div onClick={onClick} style={{ width: 44, height: 24, background: active ? 'var(--primary)' : '#cbd5e1', borderRadius: 12, position: 'relative', cursor: 'pointer', transition: 'background 0.2s' }}>
+      <div style={{ width: 20, height: 20, background: 'white', borderRadius: 10, position: 'absolute', top: 2, left: active ? 22 : 2, transition: 'all 0.2s' }}></div>
+    </div>
+  );
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '1200px' }}>
@@ -51,22 +72,31 @@ const Settings = () => {
               </div>
             </div>
             <div style={{ flex: 1 }}>
-              <h2 style={{ margin: '0 0 8px 0', fontSize: '1.4rem' }}>Administrative Profile</h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '0 0 24px 0' }}>These details are visible to the ministry oversight board.</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <h2 style={{ margin: '0 0 8px 0', fontSize: '1.4rem' }}>Administrative Profile</h2>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '0 0 24px 0' }}>These details are visible to the ministry oversight board.</p>
+                </div>
+                {editingProfile ? (
+                  <button className="btn btn-primary" onClick={handleSaveProfile} style={{ padding: '6px 16px', fontSize: '0.85rem' }}>Save Profile</button>
+                ) : (
+                  <button className="btn btn-secondary" onClick={() => setEditingProfile(true)} style={{ padding: '6px 16px', fontSize: '0.85rem' }}>Edit Details</button>
+                )}
+              </div>
               
               <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
                 <div style={{ flex: 1 }}>
                   <label className="form-label">FULL NAME</label>
-                  <input type="text" className="form-control" style={{ background: '#f1f5f9', border: 'none' }} value={adminUser.name} readOnly />
+                  <input type="text" className="form-control" style={{ background: editingProfile ? 'white' : '#f1f5f9', border: editingProfile ? '1px solid var(--border)' : '1px solid transparent' }} value={adminUser.name || ''} onChange={(e) => setAdminUser({...adminUser, name: e.target.value})} readOnly={!editingProfile} />
                 </div>
                 <div style={{ flex: 1 }}>
                   <label className="form-label">DESIGNATION</label>
-                  <input type="text" className="form-control" style={{ background: '#f1f5f9', border: 'none' }} value="City Commissioner" readOnly />
+                  <input type="text" className="form-control" style={{ background: editingProfile ? 'white' : '#f1f5f9', border: editingProfile ? '1px solid var(--border)' : '1px solid transparent' }} value={adminUser.designation || 'City Commissioner'} onChange={(e) => setAdminUser({...adminUser, designation: e.target.value})} readOnly={!editingProfile} />
                 </div>
               </div>
               <div>
                 <label className="form-label">WORK EMAIL ADDRESS</label>
-                <input type="text" className="form-control" style={{ background: '#f1f5f9', border: 'none' }} value={adminUser.email} readOnly />
+                <input type="text" className="form-control" style={{ background: editingProfile ? 'white' : '#f1f5f9', border: editingProfile ? '1px solid var(--border)' : '1px solid transparent' }} value={adminUser.email || ''} onChange={(e) => setAdminUser({...adminUser, email: e.target.value})} readOnly={!editingProfile} />
               </div>
             </div>
           </div>
@@ -75,14 +105,14 @@ const Settings = () => {
         {/* Platform Configuration List */}
         {activeTab === 'config' && (
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h2 style={{ margin: 0, fontSize: '1.4rem' }}>Platform Configuration</h2>
-              <button className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>Save Structural Changes</button>
+              <button className="btn btn-primary" onClick={() => alert('Platform structural parameters synced to central servers.')} style={{ padding: '8px 16px', fontSize: '0.85rem' }}>Save Structural Changes</button>
             </div>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '24px' }}>Global parameters for issue routing and triage.</p>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
+              <div onClick={() => alert('Opening Active Categories JSON Editor...')} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                   <div style={{ width: 40, height: 40, background: '#e0e7ff', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-sm)' }}>
                     <Sliders size={20} />
@@ -95,7 +125,7 @@ const Settings = () => {
                 <ChevronRight color="var(--text-light)" />
               </div>
 
-              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
+              <div onClick={() => alert('Editing SLA priority protocols...')} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                   <div style={{ width: 40, height: 40, background: '#fee2e2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-sm)' }}>
                     <span style={{ fontWeight: 800 }}>!</span>
@@ -122,13 +152,13 @@ const Settings = () => {
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <button style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', padding: '16px', borderRadius: 'var(--radius-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 600, cursor: 'pointer' }}>
+              <button onClick={() => alert('Password successfully generated and dispatched to your registered email.')} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', padding: '16px', borderRadius: 'var(--radius-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 600, cursor: 'pointer' }}>
                 Change Password <Lock size={16} />
               </button>
-              <button style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', padding: '16px', borderRadius: 'var(--radius-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 600, cursor: 'pointer' }}>
+              <button onClick={() => alert('MFA Authenticator configurations loaded.')} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', padding: '16px', borderRadius: 'var(--radius-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 600, cursor: 'pointer' }}>
                 Manage 2FA Devices <Smartphone size={16} />
               </button>
-              <button style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', padding: '16px', borderRadius: 'var(--radius-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 600, cursor: 'pointer' }}>
+              <button onClick={() => alert('Login history log exported.')} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', padding: '16px', borderRadius: 'var(--radius-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 600, cursor: 'pointer' }}>
                 View Login History <History size={16} />
               </button>
             </div>
@@ -138,7 +168,15 @@ const Settings = () => {
           <div style={{ border: '1px dashed #f87171', background: '#fef2f2', padding: '24px', borderRadius: 'var(--radius-md)' }}>
             <h4 style={{ margin: '0 0 8px 0', color: '#b91c1c', fontSize: '0.95rem' }}>Zone of Deletion</h4>
             <p style={{ color: '#dc2626', fontSize: '0.8rem', margin: '0 0 24px 0' }}>Actions here are permanent and require secondary authorization.</p>
-            <button style={{ background: 'none', border: 'none', color: '#b91c1c', fontWeight: 700, fontSize: '0.85rem', padding: 0, cursor: 'pointer' }}>
+            <button 
+              onClick={() => {
+                if (window.confirm('CRITICAL: Are you sure you want to deactivate your administrative access? This cannot be undone.')) {
+                   localStorage.removeItem('adminToken');
+                   localStorage.removeItem('adminUser');
+                   window.location.href = '/login';
+                }
+              }}
+              style={{ background: 'none', border: 'none', color: '#b91c1c', fontWeight: 700, fontSize: '0.85rem', padding: 0, cursor: 'pointer' }}>
               Deactivate Administrative Account
             </button>
           </div>
@@ -154,9 +192,7 @@ const Settings = () => {
                 <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>Email Digest</div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Weekly summary of city KPIs</div>
               </div>
-              <div style={{ width: 44, height: 24, background: 'var(--primary)', borderRadius: 12, position: 'relative' }}>
-                <div style={{ width: 20, height: 20, background: 'white', borderRadius: 10, position: 'absolute', top: 2, right: 2 }}></div>
-              </div>
+              <Toggle active={notifs.email} onClick={() => toggleNotif('email')} />
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -164,9 +200,7 @@ const Settings = () => {
                 <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>SMS Critical Alerts</div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Immediate priority 1 incidents</div>
               </div>
-              <div style={{ width: 44, height: 24, background: '#cbd5e1', borderRadius: 12, position: 'relative' }}>
-                <div style={{ width: 20, height: 20, background: 'white', borderRadius: 10, position: 'absolute', top: 2, left: 2 }}></div>
-              </div>
+              <Toggle active={notifs.sms} onClick={() => toggleNotif('sms')} />
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
@@ -174,12 +208,10 @@ const Settings = () => {
                 <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>Desktop Notification</div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>New issues in assigned zones</div>
               </div>
-              <div style={{ width: 44, height: 24, background: 'var(--primary)', borderRadius: 12, position: 'relative' }}>
-                <div style={{ width: 20, height: 20, background: 'white', borderRadius: 10, position: 'absolute', top: 2, right: 2 }}></div>
-              </div>
+              <Toggle active={notifs.desktop} onClick={() => toggleNotif('desktop')} />
             </div>
 
-            <a href="#" style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '8px', letterSpacing: '0.05em' }}>
+            <a href="#" onClick={(e) => { e.preventDefault(); alert('Advanced push notification routing parameters opening...'); }} style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '8px', letterSpacing: '0.05em' }}>
               MORE NOTIFICATION SETTINGS →
             </a>
           </div>

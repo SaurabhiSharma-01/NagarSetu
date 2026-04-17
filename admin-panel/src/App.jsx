@@ -69,6 +69,62 @@ function PrivateRoute({ children }) {
   return token ? children : <Navigate to="/login" />;
 }
 
+function MainLayout() {
+  const location = useLocation();
+  
+  // Format pathname into readable title
+  const getPageTitle = () => {
+    const path = location.pathname.substring(1);
+    if (!path) return 'Overview';
+    const words = path.split('-');
+    return words.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  };
+
+  const handleGlobalSearch = (e) => {
+    if (e.key === 'Enter') {
+      alert(`Global search across NagarSetu network for: "${e.target.value}".\nRedirecting to comprehensive data lake... (Feature coming soon)`);
+      e.target.value = '';
+    }
+  };
+
+  return (
+    <div className="admin-layout">
+      <Sidebar />
+      <div className="main-wrapper">
+        <header className="topbar">
+          <div className="search-bar">
+            <Search size={18} />
+            <input type="text" placeholder="Search complaints, IDs or citizens... (Press Enter)" onKeyDown={handleGlobalSearch} />
+          </div>
+          <div className="topbar-actions">
+            <Bell size={20} cursor="pointer" onClick={() => alert('No new critical alerts in your assigned sectors.')} />
+            <HelpCircle size={20} cursor="pointer" onClick={() => alert('Opening Municipal Administration Documentation portal...')} />
+            <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--primary)' }}>{getPageTitle()}</span>
+          </div>
+        </header>
+        <div className="content-area">
+          <Routes>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/users" element={<Users />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/new-report" element={<NewReport />} />
+            <Route path="*" element={<Navigate to="/dashboard" />} />
+          </Routes>
+        </div>
+        <footer className="admin-footer">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '4px', background: '#3b82f6' }}></div>
+            <span style={{ fontWeight: 600 }}>SYSTEM ONLINE</span>
+            <span style={{ marginLeft: '16px' }}>Last Refreshed: {new Date().toLocaleTimeString()}</span>
+          </div>
+          <div>© 2026 Municipal Administration Systems. NagarSetu V2.4.0</div>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   return (
     <BrowserRouter>
@@ -76,40 +132,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="*" element={
           <PrivateRoute>
-            <div className="admin-layout">
-              <Sidebar />
-              <div className="main-wrapper">
-                <header className="topbar">
-                  <div className="search-bar">
-                    <Search size={18} />
-                    <input type="text" placeholder="Search complaints, IDs or citizens..." />
-                  </div>
-                  <div className="topbar-actions">
-                    <Bell size={20} />
-                    <HelpCircle size={20} />
-                    <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Overview</span>
-                  </div>
-                </header>
-                <div className="content-area">
-                  <Routes>
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/reports" element={<Reports />} />
-                    <Route path="/users" element={<Users />} />
-                    <Route path="/settings" element={<Settings />} />
-                    <Route path="/new-report" element={<NewReport />} />
-                    <Route path="*" element={<Navigate to="/dashboard" />} />
-                  </Routes>
-                </div>
-                <footer className="admin-footer">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '4px', background: '#3b82f6' }}></div>
-                    <span style={{ fontWeight: 600 }}>SYSTEM ONLINE</span>
-                    <span style={{ marginLeft: '16px' }}>Last Refreshed: 2 minutes ago</span>
-                  </div>
-                  <div>© 2026 Municipal Administration Systems. NagarSetu V2.4.0</div>
-                </footer>
-              </div>
-            </div>
+            <MainLayout />
           </PrivateRoute>
         } />
       </Routes>

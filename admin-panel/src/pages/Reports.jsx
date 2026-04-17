@@ -2,13 +2,17 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
   FileText, Timer, CheckCircle, Smile, MapPin, 
-  Download, Calendar, TrendingUp, Droplets, Trash2, Zap, Play, Plus, Minus, Crosshair
+  Download, Calendar, TrendingUp, Droplets, Trash2, Zap, Play, Plus, Minus, Crosshair, Wrench, LayoutGrid
 } from 'lucide-react';
 import './Reports.css';
 
 const Reports = () => {
   const [complaints, setComplaints] = useState([]);
   const [viewTab, setViewTab] = useState('analytics'); // 'analytics' | 'map'
+  const [timeFilter, setTimeFilter] = useState('30'); // '7', '30', 'all'
+  const [mapFilter, setMapFilter] = useState('All'); 
+  const [mapZoom, setMapZoom] = useState(1);
+  const [temporalDays, setTemporalDays] = useState(30);
   
   const token = localStorage.getItem('adminToken');
 
@@ -26,27 +30,51 @@ const Reports = () => {
     fetchComplaints();
   }, [token]);
 
-  // Derived metrics
-  const totalReports = complaints.length;
-  const resolved = complaints.filter(c => c.status === 'Resolved').length;
-  const pending = complaints.filter(c => c.status === 'Pending').length;
-  const inProgress = complaints.filter(c => c.status === 'In Progress').length;
+  // Time Filtering
+  const filteredComplaints = complaints.filter(c => {
+    if (timeFilter === 'all') return true;
+    const complaintDate = new Date(c.createdAt);
+    const now = new Date();
+    const diffDays = Math.ceil(Math.abs(now - complaintDate) / (1000 * 60 * 60 * 24)); 
+    return diffDays <= parseInt(timeFilter);
+  });
+
+  // Derived metrics from filtered datset
+  const totalReports = filteredComplaints.length;
+  const resolved = filteredComplaints.filter(c => c.status === 'Resolved').length;
+  const pending = filteredComplaints.filter(c => c.status === 'Pending').length;
+  const inProgress = filteredComplaints.filter(c => c.status === 'In Progress').length;
   
   const resolutionRate = totalReports === 0 ? 0 : Math.round((resolved / totalReports) * 100);
   
   // Category stats
   const catCounts = { 'Waste': 0, 'Road': 0, 'Water': 0, 'Electricity': 0, 'Other': 0 };
-  complaints.forEach(c => {
+  filteredComplaints.forEach(c => {
     if (catCounts[c.category] !== undefined) catCounts[c.category]++;
   });
 
   const getCatPercent = (count) => totalReports === 0 ? 0 : Math.round((count / totalReports) * 100);
 
   // Recent resolutions
-  const recentResolved = [...complaints]
+  const recentResolved = [...filteredComplaints]
     .filter(c => c.status === 'Resolved')
     .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt))
     .slice(0, 4);
+
+  const exportAnalytics = () => {
+    if (filteredComplaints.length === 0) return alert('No data to export for this time range.');
+    let csv = "data:text/csv;charset=utf-8,ID,Category,Status,Date\n";
+    filteredComplaints.forEach(c => {
+      csv += `${c._id},"${c.category}","${c.status}","${new Date(c.createdAt).toLocaleDateString()}"\n`;
+    });
+    const encodedUri = encodeURI(csv);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `NagarSetu_Analytics_${timeFilter}d.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="reports-container">
@@ -58,11 +86,18 @@ const Reports = () => {
             Real-time monitoring of municipal health, complaint throughput, and citizen sentiment across all metropolitan sectors.
           </p>
         </div>
-        <div className="reports-actions">
-          <button className="select-btn">
-            <Calendar size={16} /> Last 30 Days <span style={{ marginLeft: 8, fontSize: '0.8rem' }}>▼</span>
-          </button>
-          <button className="export-btn">
+        <div className="reports-actions" style={{ display: 'flex', gap: '12px' }}>
+          <select 
+            className="select-btn" 
+            value={timeFilter} 
+            onChange={(e) => setTimeFilter(e.target.value)}
+            style={{ padding: '8px 12px', border: '1px solid var(--border)' }}
+          >
+            <option value="7">Last 7 Days</option>
+            <option value="30">Last 30 Days</option>
+            <option value="all">All Time</option>
+          </select>
+          <button className="export-btn" onClick={exportAnalytics}>
             <Download size={16} /> <div style={{ textAlign: 'left', lineHeight: 1.2 }}>Export<br/><span style={{ fontSize: '0.7rem' }}>Report</span></div>
           </button>
         </div>
@@ -145,12 +180,12 @@ const Reports = () => {
               </div>
               <div className="dummy-chart">
                 {/* Mockup bars representing 4 weeks */}
-                <div className="dummy-bar" style={{ height: '30%' }}></div>
-                <div className="dummy-bar" style={{ height: '50%' }}></div>
+                <div className="dummy-bar" style={{ height: timeFilter === '7' ? '10%' : '30%' }}></div>
+                <div className="dummy-bar" style={{ height: timeFilter === 'all' ? '90%' : '50%' }}></div>
                 <div className="dummy-bar" style={{ height: '40%' }}></div>
                 <div className="dummy-bar" style={{ height: '45%' }}></div>
                 <div className="dummy-bar" style={{ height: '35%' }}></div>
-                <div className="dummy-bar" style={{ height: '30%' }}></div>
+                <div className="dummy-bar" style={{ height: totalReports > 5 ? '80%' : '30%' }}></div>
                 
                 <div className="dummy-bar" style={{ height: '60%' }}></div>
                 <div className="dummy-bar" style={{ height: '65%' }}></div>
@@ -279,20 +314,61 @@ const Reports = () => {
       )}
 
       {viewTab === 'map' && (
-        <div className="map-view-container">
-          {/* Fictional map background vectors */}
+        <div 
+          className="map-view-container"
+          style={{
+            transform: `scale(${mapZoom})`,
+            transformOrigin: 'center center',
+            transition: 'transform 0.3s ease, background 0.5s ease',
+            backgroundImage: 
+              mapFilter === 'Water' ? 'radial-gradient(circle at 45% 60%, rgba(37, 99, 235, 0.4) 0%, transparent 50%), radial-gradient(circle at 65% 35%, rgba(6, 182, 212, 0.3) 0%, transparent 40%)' :
+              mapFilter === 'Waste' ? 'radial-gradient(circle at 45% 60%, rgba(22, 163, 74, 0.4) 0%, transparent 50%), radial-gradient(circle at 65% 35%, rgba(132, 204, 22, 0.3) 0%, transparent 40%)' :
+              mapFilter === 'Electricity' ? 'radial-gradient(circle at 45% 60%, rgba(234, 179, 8, 0.4) 0%, transparent 50%), radial-gradient(circle at 65% 35%, rgba(249, 115, 22, 0.3) 0%, transparent 40%)' :
+              mapFilter === 'Road' ? 'radial-gradient(circle at 45% 60%, rgba(217, 119, 6, 0.4) 0%, transparent 50%), radial-gradient(circle at 65% 35%, rgba(120, 113, 108, 0.3) 0%, transparent 40%)' :
+              undefined // uses default from CSS
+          }}
+        >
           <div className="map-lines"></div>
           <div className="map-circle"></div>
-          <div className="map-circle" style={{ width: 400, height: 400 }}></div>
-          <div className="map-circle" style={{ width: 800, height: 800 }}></div>
+          
+          {/* Scatter dynamic plot zones based on data */}
+          {filteredComplaints.filter(c => mapFilter === 'All' || c.category === mapFilter).length > 0 ? 
+            filteredComplaints.filter(c => mapFilter === 'All' || c.category === mapFilter).map((comp, i) => {
+            const top = 25 + ((i * 13) % 50);
+            const left = 25 + ((i * 17) % 50);
+            let mClass = 'marker-red';
+            if (comp.status === 'Resolved') mClass = 'marker-blue';
+            else if (comp.status === 'In Progress') mClass = 'marker-orange';
+            
+            return (
+              <div 
+                key={comp._id || i}
+                className={`map-marker ${mClass}`}
+                style={{ top: `${top}%`, left: `${left}%` }}
+                title={`${comp.category} - ${comp.status}`}
+              >
+                 {comp.status === 'Resolved' ? <CheckCircle size={12} /> : 
+                  comp.category === 'Waste' ? <Trash2 size={12} /> : 
+                  comp.category === 'Water' ? <Droplets size={12} /> : 
+                  comp.category === 'Electricity' ? <Zap size={12} /> : 
+                  <MapPin size={12} />}
+              </div>
+            );
+          }) : (
+            <div className="map-marker marker-red" style={{ top: '45%', left: '50%' }}><MapPin size={12} /></div>
+          )}
 
-          {/* Markers */}
-          <div className="map-marker marker-red"><Trash2 size={12} /></div>
-          <div className="map-marker marker-blue"><Droplets size={12} /></div>
-          <div className="map-marker marker-orange"><Zap size={12} /></div>
-
+          {/* Left Navigation Float */}
+          <div className="map-sidebar-tools" style={{ transform: `scale(${1/mapZoom})`, transformOrigin: 'top left' }}>
+            <button className={`tool-btn ${mapFilter === 'All' ? 'active' : ''}`} onClick={() => setMapFilter('All')}><LayoutGrid size={24} fill="currentColor" /></button>
+            <button className={`tool-btn ${mapFilter === 'Road' ? 'active' : ''}`} onClick={() => setMapFilter('Road')}><Wrench size={22} fill="currentColor" /></button>
+            <button className={`tool-btn ${mapFilter === 'Waste' ? 'active' : ''}`} onClick={() => setMapFilter('Waste')}><Trash2 size={22} fill="currentColor" /></button>
+            <button className={`tool-btn ${mapFilter === 'Water' ? 'active' : ''}`} onClick={() => setMapFilter('Water')}><Droplets size={22} fill="currentColor" /></button>
+            <button className={`tool-btn ${mapFilter === 'Electricity' ? 'active' : ''}`} onClick={() => setMapFilter('Electricity')}><Zap size={22} fill="currentColor" /></button>
+          </div>
+          
           {/* Map Overlay Card */}
-          <div className="map-card">
+          <div className="map-card" style={{ transform: `scale(${1/mapZoom})`, transformOrigin: 'top right' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span className="insight-label" style={{ margin: 0 }}>ACTIVE VIEW</span>
               <span style={{ fontSize: '0.7rem', fontWeight: 600, background: '#e2e8f0', padding: '2px 8px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -302,70 +378,89 @@ const Reports = () => {
             <h3 style={{ margin: '8px 0 24px 0' }}>Live Heat Map</h3>
 
             <div className="cat-header" style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>
-              <span>Top Problem Zones</span>
+              <span>{mapFilter === 'All' ? 'Top Problem Zones' : `${mapFilter} Zones`}</span>
               <span>Incidents</span>
             </div>
             
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '16px 0' }}>
               <div style={{ width: 4, height: 24, background: '#dc2626', borderRadius: 2 }}></div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>Downtown Hub</div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Waste Management</div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>Active Complaints</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Highest Frequency Area</div>
               </div>
-              <div style={{ fontWeight: 700 }}>{catCounts['Waste'] || 142}</div>
+              <div style={{ fontWeight: 700 }}>
+                {filteredComplaints.filter(c => (mapFilter === 'All' || c.category === mapFilter) && c.status !== 'Resolved').length}
+              </div>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '16px 0 24px 0' }}>
-              <div style={{ width: 4, height: 24, background: '#b91c1c', borderRadius: 2 }}></div>
+              <div style={{ width: 4, height: 24, background: '#10b981', borderRadius: 2 }}></div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>North Industrial</div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Road Maintenance</div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>Resolved Sector</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Cleared Reports</div>
               </div>
-              <div style={{ fontWeight: 700 }}>{catCounts['Road'] || 89}</div>
+              <div style={{ fontWeight: 700 }}>
+                {filteredComplaints.filter(c => (mapFilter === 'All' || c.category === mapFilter) && c.status === 'Resolved').length}
+              </div>
             </div>
 
             <div className="insight-label" style={{ marginTop: 24 }}>TRENDING CATEGORY</div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <span style={{ fontSize: '1.2rem', fontWeight: 700, color: '#1d4ed8' }}>Water Supply</span>
-                <span style={{ fontSize: '0.7rem', color: '#dc2626', marginLeft: 12, fontWeight: 700 }}>+12% vs last week</span>
+                <span style={{ fontSize: '1.2rem', fontWeight: 700, color: '#1d4ed8' }}>{mapFilter === 'All' ? 'System Overview' : mapFilter}</span>
+                <span style={{ fontSize: '0.7rem', color: '#dc2626', marginLeft: 12, fontWeight: 700 }}>{mapFilter !== 'All' ? '+12% vs last week' : ''}</span>
               </div>
               <div style={{ width: 40, height: 40, background: '#1d4ed8', color: 'white', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Droplets size={20} />
+                {mapFilter === 'Waste' ? <Trash2 size={20} /> :
+                 mapFilter === 'Water' ? <Droplets size={20} /> :
+                 mapFilter === 'Electricity' ? <Zap size={20} /> :
+                 mapFilter === 'Road' ? <Wrench size={20} /> : <LayoutGrid size={20} />}
               </div>
             </div>
-            <div className="cat-bar-bg" style={{ marginTop: 12, height: 4 }}><div className="cat-bar-fill" style={{ width: '85%' }}></div></div>
+            <div className="cat-bar-bg" style={{ marginTop: 12, height: 4 }}>
+              <div className="cat-bar-fill" style={{ width: `${filteredComplaints.length ? Math.round(filteredComplaints.filter(c => mapFilter === 'All' || c.category === mapFilter).length / filteredComplaints.length * 100) : 0}%` }}></div>
+            </div>
 
             <div className="map-stat-boxes">
               <div className="map-stat-box">
                 <div className="insight-label" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <span style={{ background: '#fecaca', color: '#dc2626', width: 14, height: 14, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 2 }}>!</span> CRITICAL
                 </div>
-                <div style={{ fontSize: '1.2rem', fontWeight: 800 }}>{pending || 24}</div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 800 }}>
+                  {filteredComplaints.filter(c => (mapFilter === 'All' || c.category === mapFilter) && c.status === 'Pending').length}
+                </div>
               </div>
               <div className="map-stat-box">
                 <div className="insight-label" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <span style={{ background: '#bfdbfe', color: '#1d4ed8', width: 14, height: 14, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 2 }}><CheckCircle size={10} /></span> RESOLVED
                 </div>
-                <div style={{ fontSize: '1.2rem', fontWeight: 800 }}>{resolved >= 1000 ? (resolved/1000).toFixed(1)+'k' : (resolved || '1.2k')}</div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 800 }}>
+                  {filteredComplaints.filter(c => (mapFilter === 'All' || c.category === mapFilter) && c.status === 'Resolved').length}
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="map-timeline">
+          <div className="map-timeline" style={{ transform: `translate(-50%, 0) scale(${1/mapZoom})`, transformOrigin: 'bottom center', bottom: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, fontSize: '0.85rem' }}>
                 <Play size={16} fill="currentColor" /> Temporal Analysis
               </div>
               <div style={{ fontSize: '0.85rem', fontWeight: 700 }}>
-                <span style={{ color: '#1d4ed8', marginRight: 12 }}>OCT 14, 2023 (TODAY)</span>
+                <span style={{ color: '#1d4ed8', marginRight: 12 }}>{new Date(Date.now() - (30 - temporalDays) * 24 * 60 * 60 * 1000).toLocaleDateString(undefined, {month: 'short', day: 'numeric', year: 'numeric'})}</span>
                 <span style={{ color: 'var(--text-light)' }}>30 DAY HISTORY</span>
               </div>
             </div>
             
-            <div className="slider-bar">
-              <div className="slider-fill"></div>
-              <div className="slider-thumb"></div>
+            <div className="slider-bar" style={{ background: 'transparent' }}>
+              <input 
+                type="range" 
+                min="0" 
+                max="30" 
+                value={temporalDays} 
+                onChange={(e) => setTemporalDays(parseInt(e.target.value))}
+                style={{ width: '100%', accentColor: '#2563eb' }}
+              />
             </div>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>
@@ -377,10 +472,10 @@ const Reports = () => {
             </div>
           </div>
 
-          <div className="map-controls">
-            <button className="map-ctrl-btn"><Plus size={20} /></button>
-            <button className="map-ctrl-btn"><Minus size={20} /></button>
-            <button className="map-ctrl-btn"><Crosshair size={20} /></button>
+          <div className="map-controls" style={{ transform: `scale(${1/mapZoom})`, transformOrigin: 'bottom right' }}>
+            <button className="map-ctrl-btn" onClick={() => setMapZoom(prev => Math.min(prev + 0.5, 3))}><Plus size={20} /></button>
+            <button className="map-ctrl-btn" onClick={() => setMapZoom(prev => Math.max(prev - 0.5, 1))}><Minus size={20} /></button>
+            <button className="map-ctrl-btn" onClick={() => setMapZoom(1)}><Crosshair size={20} /></button>
           </div>
         </div>
       )}
