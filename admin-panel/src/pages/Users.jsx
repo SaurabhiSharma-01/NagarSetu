@@ -11,7 +11,7 @@ const Users = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/auth/users', {
+      const res = await axios.get(`${import.meta.env.VITE_SERVER_URL || 'http://localhost:5000'}/api/auth/users`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setUsers(res.data);
@@ -31,7 +31,7 @@ const Users = () => {
     
     if (window.confirm("Are you sure you want to permanently ban this user? They will lose all portal access.")) {
       try {
-        await axios.delete(`http://localhost:5000/api/auth/users/${id}`, {
+        await axios.delete(`${import.meta.env.VITE_SERVER_URL || 'http://localhost:5000'}/api/auth/users/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         // Refresh the list after successful ban

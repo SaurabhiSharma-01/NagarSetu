@@ -51,7 +51,7 @@ const SubmitComplaint = () => {
 
     try {
       setIsUploading(true);
-      const res = await axios.post('http://localhost:5000/api/upload', data, {
+      const res = await axios.post(`${import.meta.env.VITE_SERVER_URL || 'http://localhost:5000'}/api/upload`, data, {
         headers: { 
           Authorization: `Bearer ${token}` 
         }
@@ -68,7 +68,7 @@ const SubmitComplaint = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/complaints', formData, {
+      await axios.post(`${import.meta.env.VITE_SERVER_URL || 'http://localhost:5000'}/api/complaints`, formData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       navigate('/dashboard');
@@ -158,7 +158,7 @@ const SubmitComplaint = () => {
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                 <CheckCircle size={24} color="#16a34a" />
                 <div style={{ fontWeight: 600, color: '#16a34a' }}>Photo Uploaded Successfully!</div>
-                <img src={`http://localhost:5000${formData.imageUrl}`} alt="Preview" style={{ height: '80px', borderRadius: '4px', marginTop: '8px' }} />
+                <img src={`${import.meta.env.VITE_SERVER_URL || 'http://localhost:5000'}${formData.imageUrl}`} alt="Preview" style={{ height: '80px', borderRadius: '4px', marginTop: '8px' }} />
               </div>
             ) : (
               <>

@@ -12,7 +12,7 @@ const Register = () => {
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/auth/register', { name, email, password, role: 'user' });
+      await axios.post(`${import.meta.env.VITE_SERVER_URL || 'http://localhost:5000'}/api/auth/register`, { name, email, password, role: 'user' });
       navigate('/login');
     } catch (err) {
       setError(err.response?.data?.msg || 'Error registering');

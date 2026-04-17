@@ -21,7 +21,7 @@ const Dashboard = () => {
 
   const fetchComplaints = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/complaints', {
+      const res = await axios.get(`${import.meta.env.VITE_SERVER_URL || 'http://localhost:5000'}/api/complaints`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setComplaints(res.data);
@@ -33,7 +33,7 @@ const Dashboard = () => {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`http://localhost:5000/api/complaints/${selectedComplaint._id}`, 
+      await axios.put(`${import.meta.env.VITE_SERVER_URL || 'http://localhost:5000'}/api/complaints/${selectedComplaint._id}`, 
         { status: updateStatus, remarks: updateRemarks },
         { headers: { Authorization: `Bearer ${token}` }}
       );
@@ -281,7 +281,7 @@ const Dashboard = () => {
                 {selectedComplaint.imageUrl && (
                   <div className="detail-section">
                     <span className="detail-label">Attached Media</span>
-                    <img src={`http://localhost:5000${selectedComplaint.imageUrl}`} alt="Evidence" className="detail-image" />
+                    <img src={`${import.meta.env.VITE_SERVER_URL || 'http://localhost:5000'}${selectedComplaint.imageUrl}`} alt="Evidence" className="detail-image" />
                   </div>
                 )}
               </div>

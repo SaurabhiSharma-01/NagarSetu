@@ -57,7 +57,7 @@ const NewReport = () => {
       if (imageFile) {
         const fileData = new FormData();
         fileData.append('image', imageFile);
-        const uploadRes = await axios.post('http://localhost:5000/api/upload', fileData, {
+        const uploadRes = await axios.post(`${import.meta.env.VITE_SERVER_URL || 'http://localhost:5000'}/api/upload`, fileData, {
           headers: { 
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
@@ -69,7 +69,7 @@ const NewReport = () => {
       // Combine submitter info into description since our schema is simpler
       const fullDescription = `[Submitted by: ${formData.submitterName || 'Anonymous'} - ${formData.submitterPhone || 'N/A'}] (Priority: ${formData.priority})\n\n${formData.description}`;
 
-      await axios.post('http://localhost:5000/api/complaints', {
+      await axios.post(`${import.meta.env.VITE_SERVER_URL || 'http://localhost:5000'}/api/complaints`, {
         title: formData.title,
         description: fullDescription,
         category: formData.category,
