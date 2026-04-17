@@ -53,7 +53,6 @@ const SubmitComplaint = () => {
       setIsUploading(true);
       const res = await axios.post('http://localhost:5000/api/upload', data, {
         headers: { 
-          'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${token}` 
         }
       });
